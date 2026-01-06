@@ -40,6 +40,8 @@ add_executable(Project
     "src/Benchmarks/bench_map.cpp"
     "src/Benchmarks/bench_unordered_map.h" 
     "src/Benchmarks/bench_unordered_map.cpp"
+    "src/Benchmarks/bench_hive.h"
+    "src/Benchmarks/bench_hive.cpp"
 )
 
 
