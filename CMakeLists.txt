@@ -36,6 +36,10 @@ add_executable(Project
 
     "src/Benchmarks/bench_flat_map.h"
     "src/Benchmarks/bench_flat_map.cpp"
+    "src/Benchmarks/bench_map.h"
+    "src/Benchmarks/bench_map.cpp"
+    "src/Benchmarks/bench_unordered_map.h" 
+    "src/Benchmarks/bench_unordered_map.cpp"
 )
 
 

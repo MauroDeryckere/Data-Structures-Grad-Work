@@ -10,58 +10,8 @@
 #include "benchmark.h"
 
 #include "Benchmarks/bench_flat_map.h"
+#include "Benchmarks/bench_map.h"
 
-std::map<int, float> g_TestMap;
-std::unordered_map<int, float> g_TestUnorderedMap;
-
-
-void BenchmarkMapIterate()
-{
-	float sum{ 0.0f };
-
-	for (auto& item : g_TestMap)
-	{
-		sum += item.second * 2.0f;
-		DO_NOT_OPTIMIZE(sum);
-	}
-	CLOBBER_MEMORY();
-}
-
-
-void BenchmarkUnorderedMapIterate()
-{
-	float sum{ 0.0f };
-
-	for (auto& item : g_TestUnorderedMap)
-	{
-		sum += item.second * 2.0f;
-		DO_NOT_OPTIMIZE(sum);
-	}
-	CLOBBER_MEMORY();
-}
-
-void BenchmarkMapEmplace()
-{	
-	g_TestMap.clear();
-
-	for (uint32_t i{ 0 }; i < Mau::TEST_MAP_SIZE; ++i)
-	{
-		float const value{ Mau::GenerateValue(i) };
-		g_TestMap.emplace(i, value);
-	}
-}
-
-
-void BenchmarkUnorderedMapEmplace()
-{
-	g_TestUnorderedMap.clear();
-
-	for (uint32_t i{ 0 }; i < Mau::TEST_MAP_SIZE; ++i)
-	{
-		float const value{ Mau::GenerateValue(i) };
-		g_TestUnorderedMap.emplace(i, value);
-	}
-}
 
 int main()
 {
@@ -80,16 +30,11 @@ int main()
 	std::filesystem::path const filePath{ resultsDir / ("bench_results_" + safeName + ".csv") };
 
 #pragma region benchmarking
-	auto& benchmarkReg{ Mau::BenchmarkRegistry::GetInstance() };
 
 	Mau::RegisterFlatMapBenchmarks();
+	Mau::RegisterMapBenchmarks();
 
-	benchmarkReg.Register("Map Emplace", "Map Emplace", BenchmarkMapEmplace, 10);
-	benchmarkReg.Register("Unordered Map Emplace", "Map Emplace", BenchmarkUnorderedMapEmplace, 10);
-
-	benchmarkReg.Register("Map Iterate", "Map Iterate", BenchmarkMapIterate, 10);
-	benchmarkReg.Register("Unordered Map Iterate", "Map Iterate", BenchmarkUnorderedMapIterate, 10);
-
+	auto& benchmarkReg{ Mau::BenchmarkRegistry::GetInstance() };
 	auto const results{ benchmarkReg.RunAll() };
 #pragma endregion
 
