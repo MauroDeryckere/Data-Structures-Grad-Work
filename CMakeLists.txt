@@ -29,10 +29,14 @@ file(MAKE_DIRECTORY ${RESULTS_DIR})
 message(STATUS "Results will be written to: ${RESULTS_DIR}")
 
 add_executable(Project
-    src/main.cpp
+    "src/main.cpp"
     "src/benchmark.h" 
-    
- "src/singleton.h" "src/benchmark_utils.h")
+    "src/singleton.h" 
+    "src/benchmark_utils.h"
+
+    "src/Benchmarks/bench_flat_map.h"
+    "src/Benchmarks/bench_flat_map.cpp"
+)
 
 
 add_subdirectory(libs)

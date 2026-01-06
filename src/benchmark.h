@@ -21,6 +21,8 @@
 
 namespace Mau
 {
+	uint32_t constexpr TEST_MAP_SIZE{ 1'000'000 };
+
 	using BenchmarkFunc = std::function<void()>;
 
 	class BenchmarkRegistry final : public MauCor::Singleton<BenchmarkRegistry>

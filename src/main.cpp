@@ -1,7 +1,6 @@
 #include <iostream>
 #include <filesystem>
 
-#include <SG14/flat_map.h>
 #include <map>
 #include <unordered_map>
 
@@ -10,23 +9,11 @@
 
 #include "benchmark.h"
 
-stdext::flat_map<int, float> g_TestFlatMap;
+#include "Benchmarks/bench_flat_map.h"
+
 std::map<int, float> g_TestMap;
 std::unordered_map<int, float> g_TestUnorderedMap;
 
-uint32_t constexpr TEST_MAP_SIZE{ 1'000'000 };
-
-void BenchmarkFlatMapIterate()
-{
-	float sum{ 0.0f };
-
-	for (auto const& item : g_TestFlatMap)
-	{
-		sum += item.second * 2.0f;
-		DO_NOT_OPTIMIZE(sum);
-	}
-	CLOBBER_MEMORY();
-}
 
 void BenchmarkMapIterate()
 {
@@ -53,22 +40,11 @@ void BenchmarkUnorderedMapIterate()
 	CLOBBER_MEMORY();
 }
 
-void BenchmarkFlatMapEmplace()
-{
-	g_TestFlatMap.clear();
-
-	for (uint32_t i{ 0 }; i < TEST_MAP_SIZE; ++i)
-	{
-		float const value{ Mau::GenerateValue(i) };
-		g_TestFlatMap.emplace(i, value);
-	}
-}
-
 void BenchmarkMapEmplace()
 {	
 	g_TestMap.clear();
 
-	for (uint32_t i{ 0 }; i < TEST_MAP_SIZE; ++i)
+	for (uint32_t i{ 0 }; i < Mau::TEST_MAP_SIZE; ++i)
 	{
 		float const value{ Mau::GenerateValue(i) };
 		g_TestMap.emplace(i, value);
@@ -80,7 +56,7 @@ void BenchmarkUnorderedMapEmplace()
 {
 	g_TestUnorderedMap.clear();
 
-	for (uint32_t i{ 0 }; i < TEST_MAP_SIZE; ++i)
+	for (uint32_t i{ 0 }; i < Mau::TEST_MAP_SIZE; ++i)
 	{
 		float const value{ Mau::GenerateValue(i) };
 		g_TestUnorderedMap.emplace(i, value);
@@ -105,11 +81,12 @@ int main()
 
 #pragma region benchmarking
 	auto& benchmarkReg{ Mau::BenchmarkRegistry::GetInstance() };
-	benchmarkReg.Register("Flat Map Emplace", "Map Emplace", BenchmarkFlatMapEmplace, 10);
+
+	Mau::RegisterFlatMapBenchmarks();
+
 	benchmarkReg.Register("Map Emplace", "Map Emplace", BenchmarkMapEmplace, 10);
 	benchmarkReg.Register("Unordered Map Emplace", "Map Emplace", BenchmarkUnorderedMapEmplace, 10);
 
-	benchmarkReg.Register("Flat Map Iterate", "Map Iterate", BenchmarkFlatMapIterate, 10);
 	benchmarkReg.Register("Map Iterate", "Map Iterate", BenchmarkMapIterate, 10);
 	benchmarkReg.Register("Unordered Map Iterate", "Map Iterate", BenchmarkUnorderedMapIterate, 10);
 
