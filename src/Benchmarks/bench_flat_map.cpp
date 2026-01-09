@@ -1,6 +1,5 @@
 #include "bench_flat_map.h"
-
-#include "../Benchmark.h"
+#include "../benchmark.h"
 
 #include <SG14/flat_map.h>
 

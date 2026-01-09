@@ -1,6 +1,5 @@
 #include "bench_hive.h"
-
-#include "../Benchmark.h"
+#include "../benchmark.h"
 
 #include "plf_hive/plf_hive.h"
 
