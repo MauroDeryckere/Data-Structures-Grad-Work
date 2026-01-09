@@ -5,7 +5,7 @@
 
 namespace Mau
 {
-	std::map<int, float> g_TestMap;
+	std::map<Entity, ComponentSmall> g_TestMap;
 
 	void RegisterMapBenchmarks()
 	{

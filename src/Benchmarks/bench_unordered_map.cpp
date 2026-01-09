@@ -5,12 +5,14 @@
 
 namespace Mau
 {
-	std::unordered_map<int, float> g_TestUnorderedMap;
+	std::unordered_map<Entity, ComponentSmall> g_TestUnorderedMap;
 
 
 	void RegisterUnorderedMapBenchmarks()
 	{
-
+		auto& benchmarkReg{ Mau::BenchmarkRegistry::GetInstance() };
+		benchmarkReg.Register("Unordered Map Emplace", "Map Emplace", BenchmarkUnorderedMapEmplace, 10);
+		benchmarkReg.Register("Unordered Map Iterate", "Map Iterate", BenchmarkUnorderedMapIterate, 10);
 	}
 
 	void BenchmarkUnorderedMapIterate()

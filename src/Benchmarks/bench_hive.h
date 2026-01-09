@@ -4,9 +4,12 @@
 namespace Mau
 {
 	void RegisterHiveBenchmarks();
+	
+	void BenchmarkHiveCombinedIterate();
+	void BenchmarkHiveCombinedEmplace();
 
-	void BenchmarkHiveIterate();
-	void BenchmarkHiveEmplace();
+	void BenchmarkHiveValueOnlyIterate();
+	void BenchmarkHiveValueOnlyEmplace();
 }
 
 #endif

@@ -21,6 +21,12 @@
 
 namespace Mau
 {
+	using Entity = uint32_t;
+	
+	using ComponentSmall = float;
+	using ComponentMedium = float; // TODO
+	using ComponentBig = float; // TODO
+
 	uint32_t constexpr TEST_MAP_SIZE{ 1'000'000 };
 
 	using BenchmarkFunc = std::function<void()>;

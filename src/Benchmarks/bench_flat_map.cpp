@@ -1,15 +1,13 @@
 #include "bench_flat_map.h"
-#include "../benchmark.h"
+
+#include "../Benchmark.h"
 
 #include <SG14/flat_map.h>
 
-namespace
-{
-	stdext::flat_map<int, float> g_TestFlatMap;
-}
-
 namespace Mau
 {
+	stdext::flat_map<Entity, ComponentSmall> g_TestFlatMap;
+
 	void RegisterFlatMapBenchmarks()
 	{
 		auto& reg = Mau::BenchmarkRegistry::GetInstance();
