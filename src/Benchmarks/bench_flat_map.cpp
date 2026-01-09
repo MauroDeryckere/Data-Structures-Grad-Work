@@ -16,15 +16,14 @@ namespace Mau
 
 	void BenchmarkFlatMapIterate()
 	{
-		float sum{ 0.0f };
+		static volatile float sum{ 0.0f };
 
 		for (auto const& item : g_TestFlatMap)
 		{
 			sum += item.second * 2.0f;
+			DoNotOptimize(sum);
 		}
-
-		DO_NOT_OPTIMIZE(sum);
-		CLOBBER_MEMORY();
+		ClobberMemory();
 	}
 
 	void BenchmarkFlatMapEmplace()

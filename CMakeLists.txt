@@ -53,24 +53,51 @@ target_link_libraries(Project PRIVATE Libs)
 # Force C++23 test build
 target_compile_features(Project PRIVATE cxx_std_23)
 
+
 # Define macros
 target_compile_definitions(Project
     PRIVATE PROJECT_ROOT_DIR="${CMAKE_SOURCE_DIR}"
             PROJECT_RESULTS_DIR="${RESULTS_DIR}"
 )
 
+# ===============================
+# Optimizations (NO LTO)
+# ===============================
 if (MSVC)
-    add_compile_options(@CMAKE_CXX_FLAGS@)
-    set(CMAKE_NINJA_FORCE_RESPONSE_FILE ON CACHE INTERNAL "")
-endif() 
-
-if (MINGW)
-    message(STATUS "Building with fully static linking for MinGW")
-    target_link_options(Project PRIVATE -static -static-libgcc -static-libstdc++)
+    target_compile_options(Project PRIVATE
+        /O2
+        /DNDEBUG
+        /GL- # Explicitly disable Whole Program Optimization
+    )
+    target_link_options(Project PRIVATE
+        /LTCG:OFF
+    )
+else()
+    target_compile_options(Project PRIVATE
+        -O3
+        -march=native
+        -ffast-math
+        -DNDEBUG
+        -fno-lto
+    )
+    target_link_options(Project PRIVATE
+        -fno-lto
+    )
 endif()
 
-if (MSVC)
-    target_compile_options(Project PRIVATE /O2 /GL /DNDEBUG)
-else()
-    target_compile_options(Project PRIVATE -O3 -march=native -ffast-math -DNDEBUG)
+# Disable IPO at CMake level as well
+set_target_properties(Project PROPERTIES
+    INTERPROCEDURAL_OPTIMIZATION OFF
+)
+
+# ===============================
+# MinGW static build
+# ===============================
+if (MINGW)
+    message(STATUS "Building with fully static linking for MinGW")
+    target_link_options(Project PRIVATE
+        -static
+        -static-libgcc
+        -static-libstdc++
+    )
 endif()

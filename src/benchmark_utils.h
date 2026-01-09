@@ -1,23 +1,32 @@
 #ifndef MAU_BENCHMARK_UTILS_H
 #define MAU_BENCHMARK_UTILS_H
 
-#if defined(_MSC_VER)
+#if defined(__clang__) || defined(__GNUC__)
+template <class T>
+inline void DoNotOptimize(const T& value)
+{
+	asm volatile("" : : "g"(value) : "memory");
+}
 
-#   include <intrin.h>
-#   pragma intrinsic(_ReadWriteBarrier)
-#   define DO_NOT_OPTIMIZE(x) do { (void)(x); _ReadWriteBarrier(); } while(0)
-#   define CLOBBER_MEMORY()   _ReadWriteBarrier()
+inline void ClobberMemory()
+{
+	asm volatile("" : : : "memory");
+}
 
-#elif defined(__GNUC__) || defined(__clang__)
+#elif defined(_MSC_VER)
+#include <intrin.h>
 
-#   define DO_NOT_OPTIMIZE(x) asm volatile("" : : "g"(x) : "memory")
-#   define CLOBBER_MEMORY()   asm volatile("" ::: "memory")
+template <class T>
+inline void DoNotOptimize(const T& value)
+{
+	_ReadWriteBarrier();
+	(void)value;
+}
 
-#else
-
-#   define DO_NOT_OPTIMIZE(x) ((void)x)
-#   define CLOBBER_MEMORY()
-
+inline void ClobberMemory()
+{
+	_ReadWriteBarrier();
+}
 #endif
 
 namespace Mau

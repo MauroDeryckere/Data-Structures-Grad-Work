@@ -36,9 +36,9 @@ namespace Mau
 		for (auto& item : g_TestHiveCombined)
 		{
 			sum += item.value * 2.0f;
-			DO_NOT_OPTIMIZE(sum);
+			DoNotOptimize(sum);
 		}
-		CLOBBER_MEMORY();
+		ClobberMemory();
 	}
 
 	void BenchmarkHiveCombinedEmplace()
@@ -52,13 +52,14 @@ namespace Mau
 
 	void BenchmarkHiveValueOnlyIterate()
 	{
-		float sum{ 0.0f };
+		static volatile float sum{ 0.0f };
+
 		for (auto& value : g_TestHiveValueOnly)
 		{
 			sum += value * 2.0f;
-			DO_NOT_OPTIMIZE(sum);
+			DoNotOptimize(sum);
 		}
-		CLOBBER_MEMORY();
+		ClobberMemory();
 	}
 
 	void BenchmarkHiveValueOnlyEmplace()

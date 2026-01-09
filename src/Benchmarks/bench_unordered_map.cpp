@@ -17,14 +17,14 @@ namespace Mau
 
 	void BenchmarkUnorderedMapIterate()
 	{
-		float sum{ 0.0f };
+		static volatile float sum{ 0.0f };
 
 		for (auto& item : g_TestUnorderedMap)
 		{
 			sum += item.second * 2.0f;
-			DO_NOT_OPTIMIZE(sum);
+			DoNotOptimize(sum);
 		}
-		CLOBBER_MEMORY();
+		ClobberMemory();
 	}
 
 	void BenchmarkUnorderedMapEmplace()
