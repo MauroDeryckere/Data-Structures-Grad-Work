@@ -11,6 +11,9 @@
 
 #include "Benchmarks/bench_flat_map.h"
 #include "Benchmarks/bench_map.h"
+#include "Benchmarks/bench_hive.h"
+#include "Benchmarks/bench_sparse_set.h"
+#include "Benchmarks/bench_unordered_map.h"
 
 
 int main()
@@ -32,7 +35,11 @@ int main()
 #pragma region benchmarking
 
 	Mau::RegisterFlatMapBenchmarks();
+	Mau::RegisterHiveBenchmarks();
 	Mau::RegisterMapBenchmarks();
+	Mau::RegisterSparseSetBenchmarks();
+	Mau::RegisterUnorderedMapBenchmarks();
+
 
 	auto& benchmarkReg{ Mau::BenchmarkRegistry::GetInstance() };
 	auto const results{ benchmarkReg.RunAll() };
