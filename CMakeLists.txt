@@ -27,6 +27,7 @@ else()
 endif()
 file(MAKE_DIRECTORY ${RESULTS_DIR})
 message(STATUS "Results will be written to: ${RESULTS_DIR}")
+set(RESULTS_DIR "${RESULTS_DIR}" CACHE PATH "Benchmark results directory")
 
 add_executable(Project
     "src/main.cpp"
