@@ -11,8 +11,8 @@ namespace Mau
 	{
 		auto& benchmarkReg{ Mau::BenchmarkRegistry::GetInstance() };
 
-		benchmarkReg.Register("Sparse Set Emplace", "Sparse Set Emplace", BenchmarkSparseSetEmplace, 10);
-		benchmarkReg.Register("Sparse Set Iterate", "Sparse Set Iterate", BenchmarkSparseSetIterate, 10);
+		benchmarkReg.Register("Sparse Set Emplace", "Sparse Set Emplace", BenchmarkSparseSetEmplace, TEST_ITERATIONS);
+		benchmarkReg.Register("Sparse Set Iterate", "Sparse Set Iterate", BenchmarkSparseSetIterate, TEST_ITERATIONS);
 	}
 
 	void BenchmarkSparseSetIterate()

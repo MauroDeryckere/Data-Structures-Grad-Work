@@ -22,12 +22,12 @@ namespace Mau
 		auto& reg = Mau::BenchmarkRegistry::GetInstance();
 
 		// Combined
-		reg.Register("Hive Combined Emplace", "Hive Emplace", BenchmarkHiveCombinedEmplace, 10);
-		reg.Register("Hive Combined Iterate", "Hive Iterate", BenchmarkHiveCombinedIterate, 10);
+		reg.Register("Hive Combined Emplace", "Hive Emplace", BenchmarkHiveCombinedEmplace, TEST_ITERATIONS);
+		reg.Register("Hive Combined Iterate", "Hive Iterate", BenchmarkHiveCombinedIterate, TEST_ITERATIONS);
 
 		// Value Only
-		reg.Register("Hive Value Only Emplace", "Hive Emplace", BenchmarkHiveValueOnlyEmplace, 10);
-		reg.Register("Hive Value Only Iterate", "Hive Iterate", BenchmarkHiveValueOnlyIterate, 10);
+		reg.Register("Hive Value Only Emplace", "Hive Emplace", BenchmarkHiveValueOnlyEmplace, TEST_ITERATIONS);
+		reg.Register("Hive Value Only Iterate", "Hive Iterate", BenchmarkHiveValueOnlyIterate, TEST_ITERATIONS);
 	}
 
 	void BenchmarkHiveCombinedIterate()

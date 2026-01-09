@@ -10,8 +10,8 @@ namespace Mau
 	void RegisterMapBenchmarks()
 	{
 		auto& benchmarkReg{ Mau::BenchmarkRegistry::GetInstance() };
-		benchmarkReg.Register("Map Emplace", "Map Emplace", BenchmarkMapEmplace, 10);
-		benchmarkReg.Register("Map Iterate", "Map Iterate", BenchmarkMapIterate, 10);
+		benchmarkReg.Register("Map Emplace", "Map Emplace", BenchmarkMapEmplace, TEST_ITERATIONS);
+		benchmarkReg.Register("Map Iterate", "Map Iterate", BenchmarkMapIterate, TEST_ITERATIONS);
 	}
 
 	void BenchmarkMapIterate()

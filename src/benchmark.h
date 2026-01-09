@@ -28,6 +28,9 @@ namespace Mau
 	using ComponentBig = float; // TODO
 
 	uint32_t constexpr TEST_MAP_SIZE{ 1'000'000 };
+	uint32_t constexpr TEST_ITERATIONS{ 10 };
+
+	uint32_t constexpr NUM_WARMUP_RUNS{ 5 };
 
 	using BenchmarkFunc = std::function<void()>;
 
@@ -206,8 +209,8 @@ namespace Mau
 			}
 
 
-			return true;
 			std::cout << "Appended results to: " << mergedFile << "\n";
+			return true;
 		}
 
 	private:
@@ -233,6 +236,11 @@ namespace Mau
 
 			std::vector<double> times;
 			times.reserve(entry.iterations);
+
+			for (size_t i{ 0 }; i < NUM_WARMUP_RUNS; ++i)
+			{
+				entry.func();
+			}
 
 			for (size_t i{ 0 }; i < entry.iterations; ++i)
 			{

@@ -11,8 +11,8 @@ namespace Mau
 	void RegisterUnorderedMapBenchmarks()
 	{
 		auto& benchmarkReg{ Mau::BenchmarkRegistry::GetInstance() };
-		benchmarkReg.Register("Unordered Map Emplace", "Map Emplace", BenchmarkUnorderedMapEmplace, 10);
-		benchmarkReg.Register("Unordered Map Iterate", "Map Iterate", BenchmarkUnorderedMapIterate, 10);
+		benchmarkReg.Register("Unordered Map Emplace", "Map Emplace", BenchmarkUnorderedMapEmplace, TEST_ITERATIONS);
+		benchmarkReg.Register("Unordered Map Iterate", "Map Iterate", BenchmarkUnorderedMapIterate, TEST_ITERATIONS);
 	}
 
 	void BenchmarkUnorderedMapIterate()
