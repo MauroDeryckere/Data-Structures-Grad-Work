@@ -52,7 +52,7 @@ namespace Mau
 
 	void BenchmarkHiveValueOnlyIterate()
 	{
-		static volatile float sum{ 0.0f };
+		float sum{ 0.0f };
 
 		for (auto& value : g_TestHiveValueOnly)
 		{

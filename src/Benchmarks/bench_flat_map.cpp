@@ -16,7 +16,7 @@ namespace Mau
 
 	void BenchmarkFlatMapIterate()
 	{
-		static volatile float sum{ 0.0f };
+		float sum{ 0.0f };
 
 		for (auto const& item : g_TestFlatMap)
 		{
