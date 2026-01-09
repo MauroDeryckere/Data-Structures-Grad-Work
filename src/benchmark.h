@@ -16,6 +16,7 @@
 #include <chrono>
 #include <optional>
 
+#include <cassert>
 
 #include "benchmark_utils.h"
 
@@ -234,6 +235,8 @@ namespace Mau
 		{
 			using namespace std::chrono;
 
+			assert(entry.iterations > 2);
+
 			std::vector<double> times;
 			times.reserve(entry.iterations);
 
@@ -255,13 +258,22 @@ namespace Mau
 			}
 
 			std::sort(times.begin(), times.end());
-			double const total{ std::accumulate(times.begin(), times.end(), 0.0) };
-			double const avg{ total / entry.iterations };
-			double const median{ times[times.size() / 2] };
-			double const min{ times.front() };
-			double const max{ times.back() };
 
-			return { entry.name, entry.category, entry.iterations, avg, total, median, min, max };
+
+			auto const n{ times.size() };
+			size_t const trim{ std::max<size_t>(1, n / 10) };
+
+			auto const begin{ times.begin() + trim };
+			auto const end{ times.end() - trim };
+			size_t const used{ static_cast<size_t>(std::distance(begin, end)) };
+
+			double const total{ std::accumulate(begin, end, 0.0) };
+			double const avg{ total / used };
+			double const median{ begin[used / 2] };
+			double const min{ *begin };
+			double const max{ *(end - 1) };
+
+			return { entry.name, entry.category, used, avg, total, median, min, max };
 		}
 	};
 
