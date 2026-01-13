@@ -59,7 +59,10 @@ namespace Mau
 		std::shuffle(g_LookupKeys.begin(), g_LookupKeys.end(), rng);
 	}
 
+	using BenchmarkSetupFunc = std::function<void()>;
 	using BenchmarkFunc = std::function<void()>;
+	using BenchmarkTeardownFunc = std::function<void()>;
+
 
 	class BenchmarkRegistry final : public MauCor::Singleton<BenchmarkRegistry>
 	{
@@ -78,9 +81,9 @@ namespace Mau
 			double maxMs;
 		};
 
-		void Register(std::string const& name, std::string const& category, BenchmarkFunc const& func, size_t iterations = 10) noexcept
+		void Register(std::string const& name, std::string const& category, BenchmarkFunc const& func, size_t iterations = 10, BenchmarkSetupFunc const& setupFunc = {}, BenchmarkTeardownFunc const& teardownFunc = {}) noexcept
 		{
-			m_Benchmarks.emplace_back(name, category, func, iterations);
+			m_Benchmarks.emplace_back(name, category, setupFunc, func, teardownFunc, iterations);
 		}
 
 		[[nodiscard]] std::vector<BenchmarkResult> RunAll(std::optional<std::vector <std::string>> categoryFilter = std::nullopt) const noexcept
@@ -250,7 +253,9 @@ namespace Mau
 			std::string name;
 			std::string category;
 
+			BenchmarkSetupFunc setupFunc;
 			BenchmarkFunc func;
+			BenchmarkTeardownFunc teardownFunc;
 			size_t iterations;
 		};
 
@@ -273,6 +278,8 @@ namespace Mau
 
 			for (size_t i{ 0 }; i < entry.iterations; ++i)
 			{
+				entry.setupFunc();
+
 				auto const start{ high_resolution_clock::now() };
 
 				entry.func();
@@ -281,6 +288,8 @@ namespace Mau
 
 				auto const dur{ duration<double, std::milli>(end - start).count() };
 				times.emplace_back(dur);
+
+				entry.teardownFunc();
 			}
 
 			std::sort(times.begin(), times.end());

@@ -5,13 +5,17 @@ namespace Mau
 {
 	void RegisterFlatMapBenchmarks();
 
-
-	void BenchmarkFlatMapIterate();
+	void BenchmarkFlatMapEmplaceSetup();
 	void BenchmarkFlatMapEmplace();
 
-	void BenchmarkFlatMapLookup();
-	void BenchmarkFlatMapErase();
+	void BenchmarkFlatMapIterateSetup();
+	void BenchmarkFlatMapIterate();
 
+	void BenchmarkFlatMapLookupSetup();
+	void BenchmarkFlatMapLookup();
+	
+	void BenchmarkFlatMapEraseSetup();
+	void BenchmarkFlatMapErase();
 }
 
 #endif

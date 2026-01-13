@@ -10,10 +10,32 @@ namespace Mau
 	void RegisterFlatMapBenchmarks()
 	{
 		auto& reg = Mau::BenchmarkRegistry::GetInstance();
-		reg.Register("Flat Map Emplace", "Map Emplace", BenchmarkFlatMapEmplace, TEST_ITERATIONS);
-		reg.Register("Flat Map Iterate", "Map Iterate", BenchmarkFlatMapIterate, TEST_ITERATIONS);
-		reg.Register("Flat Map Lookup", "Map Lookup", BenchmarkFlatMapLookup, TEST_ITERATIONS);
-		reg.Register("Flat Map Erase", "Map Erase", BenchmarkFlatMapErase, TEST_ITERATIONS);
+
+		reg.Register("Flat Map Emplace", "Map Emplace", BenchmarkFlatMapEmplace, TEST_ITERATIONS, BenchmarkFlatMapEmplaceSetup);
+		reg.Register("Flat Map Iterate", "Map Iterate", BenchmarkFlatMapIterate, TEST_ITERATIONS, BenchmarkFlatMapIterateSetup);
+		reg.Register("Flat Map Lookup", "Map Lookup", BenchmarkFlatMapLookup, TEST_ITERATIONS, BenchmarkFlatMapLookupSetup);
+		reg.Register("Flat Map Erase", "Map Erase", BenchmarkFlatMapErase, TEST_ITERATIONS, BenchmarkFlatMapEraseSetup);
+	}
+
+	void BenchmarkFlatMapEmplaceSetup()
+	{
+		g_TestFlatMap.clear();
+	}
+
+	void BenchmarkFlatMapEmplace()
+	{
+		for (uint32_t i{ 0 }; i < TEST_MAP_SIZE; ++i)
+		{
+			float const value{ Mau::GenerateValue(i) };
+			g_TestFlatMap.emplace(i, value);
+		}
+		ClobberMemory();
+	}
+
+	void BenchmarkFlatMapIterateSetup()
+	{
+		BenchmarkFlatMapEmplaceSetup();
+		BenchmarkFlatMapEmplace();
 	}
 
 	void BenchmarkFlatMapIterate()
@@ -28,16 +50,10 @@ namespace Mau
 		ClobberMemory();
 	}
 
-	void BenchmarkFlatMapEmplace()
+	void BenchmarkFlatMapLookupSetup()
 	{
-		g_TestFlatMap.clear();
-		
-		for (uint32_t i{ 0 }; i < TEST_MAP_SIZE; ++i)
-		{
-			float const value{ Mau::GenerateValue(i) };
-			g_TestFlatMap.emplace(i, value);
-		}
-		ClobberMemory();
+		BenchmarkFlatMapEmplaceSetup();
+		BenchmarkFlatMapEmplace();
 	}
 
 	void BenchmarkFlatMapLookup()
@@ -57,6 +73,12 @@ namespace Mau
 
 		DoNotOptimize(sum);
 		ClobberMemory();
+	}
+
+	void BenchmarkFlatMapEraseSetup()
+	{
+		BenchmarkFlatMapEmplaceSetup();
+		BenchmarkFlatMapEmplace();
 	}
 
 	void BenchmarkFlatMapErase()
