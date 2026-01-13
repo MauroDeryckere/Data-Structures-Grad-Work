@@ -33,13 +33,13 @@ int main()
 	std::filesystem::path const filePath{ resultsDir / ("bench_results_" + safeName + ".csv") };
 
 #pragma region benchmarking
+	Mau::InitLookupKeys(0.5f, 0.8f);
 
 	Mau::RegisterFlatMapBenchmarks();
 	Mau::RegisterHiveBenchmarks();
 	Mau::RegisterMapBenchmarks();
 	Mau::RegisterSparseSetBenchmarks();
 	Mau::RegisterUnorderedMapBenchmarks();
-
 
 	auto& benchmarkReg{ Mau::BenchmarkRegistry::GetInstance() };
 	auto const results{ benchmarkReg.RunAll() };

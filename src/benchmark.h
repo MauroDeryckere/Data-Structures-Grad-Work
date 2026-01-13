@@ -19,6 +19,7 @@
 #include <cassert>
 
 #include "benchmark_utils.h"
+#include <random>
 
 namespace Mau
 {
@@ -32,6 +33,31 @@ namespace Mau
 	uint32_t constexpr TEST_ITERATIONS{ 10 };
 
 	uint32_t constexpr NUM_WARMUP_RUNS{ 5 };
+
+	static std::vector<Entity> g_LookupKeys;
+
+	void InitLookupKeys(float lookupFraction, float hitRatio)
+	{
+		g_LookupKeys.clear();
+
+		size_t const lookupCount{ static_cast<size_t>(TEST_MAP_SIZE * lookupFraction) };
+		g_LookupKeys.resize(lookupCount);
+
+		std::mt19937 rng(12345);
+
+		std::bernoulli_distribution hitDist(hitRatio);
+
+		std::uniform_int_distribution<Entity> hitKeyDist(0, TEST_MAP_SIZE - 1);
+		std::uniform_int_distribution<Entity> missKeyDist(TEST_MAP_SIZE, TEST_MAP_SIZE * 2);
+
+		for (auto& key : g_LookupKeys)
+		{
+			key = hitDist(rng) ? hitKeyDist(rng) : missKeyDist(rng);
+		}
+
+		// Randomized access order; prevents unfair biasing for very cache efficient containers
+		std::shuffle(g_LookupKeys.begin(), g_LookupKeys.end(), rng);
+	}
 
 	using BenchmarkFunc = std::function<void()>;
 

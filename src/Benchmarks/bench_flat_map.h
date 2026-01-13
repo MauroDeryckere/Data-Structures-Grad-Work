@@ -8,6 +8,10 @@ namespace Mau
 
 	void BenchmarkFlatMapIterate();
 	void BenchmarkFlatMapEmplace();
+
+	void BenchmarkFlatMapLookup();
+	void BenchmarkFlatMapErase();
+
 }
 
 #endif
