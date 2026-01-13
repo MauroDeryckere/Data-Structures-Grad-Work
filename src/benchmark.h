@@ -36,7 +36,7 @@ namespace Mau
 
 	static std::vector<Entity> g_LookupKeys;
 
-	void InitLookupKeys(float lookupFraction, float hitRatio)
+	static void InitLookupKeys(float lookupFraction, float hitRatio)
 	{
 		g_LookupKeys.clear();
 
@@ -278,18 +278,27 @@ namespace Mau
 
 			for (size_t i{ 0 }; i < entry.iterations; ++i)
 			{
-				entry.setupFunc();
+				if (entry.setupFunc)
+				{
+					entry.setupFunc();
+				}
 
 				auto const start{ high_resolution_clock::now() };
 
-				entry.func();
+				if (entry.func)
+				{
+					entry.func();
+				}
 
 				auto const end{ high_resolution_clock::now() };
 
 				auto const dur{ duration<double, std::milli>(end - start).count() };
 				times.emplace_back(dur);
 
-				entry.teardownFunc();
+				if (entry.teardownFunc)
+				{
+					entry.teardownFunc();
+				}
 			}
 
 			std::sort(times.begin(), times.end());

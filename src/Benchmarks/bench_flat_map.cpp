@@ -9,7 +9,7 @@ namespace Mau
 
 	void RegisterFlatMapBenchmarks()
 	{
-		auto& reg = Mau::BenchmarkRegistry::GetInstance();
+		auto& reg{ Mau::BenchmarkRegistry::GetInstance() };
 
 		reg.Register("Flat Map Emplace", "Map Emplace", BenchmarkFlatMapEmplace, TEST_ITERATIONS, BenchmarkFlatMapEmplaceSetup);
 		reg.Register("Flat Map Iterate", "Map Iterate", BenchmarkFlatMapIterate, TEST_ITERATIONS, BenchmarkFlatMapIterateSetup);
