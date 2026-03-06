@@ -11,10 +11,10 @@ namespace Mau
 	{
 		auto& reg{ Mau::BenchmarkRegistry::GetInstance() };
 
-		reg.Register("Flat Map Emplace", "Map Emplace", BenchmarkFlatMapEmplace, TEST_ITERATIONS, BenchmarkFlatMapEmplaceSetup);
-		reg.Register("Flat Map Iterate", "Map Iterate", BenchmarkFlatMapIterate, TEST_ITERATIONS, BenchmarkFlatMapIterateSetup);
-		reg.Register("Flat Map Lookup", "Map Lookup", BenchmarkFlatMapLookup, TEST_ITERATIONS, BenchmarkFlatMapLookupSetup);
-		reg.Register("Flat Map Erase", "Map Erase", BenchmarkFlatMapErase, TEST_ITERATIONS, BenchmarkFlatMapEraseSetup);
+		reg.Register("Flat Map Emplace", "Emplace", BenchmarkFlatMapEmplace, TEST_ITERATIONS, BenchmarkFlatMapEmplaceSetup);
+		reg.Register("Flat Map Iterate", "Iterate", BenchmarkFlatMapIterate, TEST_ITERATIONS, BenchmarkFlatMapIterateSetup);
+		reg.Register("Flat Map Lookup", "Lookup", BenchmarkFlatMapLookup, TEST_ITERATIONS, BenchmarkFlatMapLookupSetup);
+		reg.Register("Flat Map Erase", "Erase", BenchmarkFlatMapErase, TEST_ITERATIONS, BenchmarkFlatMapEraseSetup);
 	}
 
 	void BenchmarkFlatMapEmplaceSetup()

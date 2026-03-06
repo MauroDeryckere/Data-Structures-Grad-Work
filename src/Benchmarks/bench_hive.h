@@ -4,12 +4,26 @@
 namespace Mau
 {
 	void RegisterHiveBenchmarks();
-	
-	void BenchmarkHiveCombinedIterate();
+
+	void BenchmarkHiveCombinedEmplaceSetup();
 	void BenchmarkHiveCombinedEmplace();
 
-	void BenchmarkHiveValueOnlyIterate();
+	void BenchmarkHiveCombinedIterateSetup();
+	void BenchmarkHiveCombinedIterate();
+
+	// Lookup and erase require a side map (unordered_map<Entity, iterator>)
+	// since hive is a sequence container with no key-based access
+	void BenchmarkHiveCombinedLookupSetup();
+	void BenchmarkHiveCombinedLookup();
+
+	void BenchmarkHiveCombinedEraseSetup();
+	void BenchmarkHiveCombinedErase();
+
+	void BenchmarkHiveValueOnlyEmplaceSetup();
 	void BenchmarkHiveValueOnlyEmplace();
+
+	void BenchmarkHiveValueOnlyIterateSetup();
+	void BenchmarkHiveValueOnlyIterate();
 }
 
 #endif

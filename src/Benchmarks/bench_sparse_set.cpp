@@ -9,17 +9,40 @@ namespace Mau
 
 	void RegisterSparseSetBenchmarks()
 	{
-		auto& benchmarkReg{ Mau::BenchmarkRegistry::GetInstance() };
+		auto& reg{ Mau::BenchmarkRegistry::GetInstance() };
 
-		benchmarkReg.Register("Sparse Set Emplace", "Sparse Set Emplace", BenchmarkSparseSetEmplace, TEST_ITERATIONS);
-		benchmarkReg.Register("Sparse Set Iterate", "Sparse Set Iterate", BenchmarkSparseSetIterate, TEST_ITERATIONS);
+		reg.Register("Sparse Set Emplace", "Emplace", BenchmarkSparseSetEmplace, TEST_ITERATIONS, BenchmarkSparseSetEmplaceSetup);
+		reg.Register("Sparse Set Iterate", "Iterate", BenchmarkSparseSetIterate, TEST_ITERATIONS, BenchmarkSparseSetIterateSetup);
+		reg.Register("Sparse Set Lookup", "Lookup", BenchmarkSparseSetLookup, TEST_ITERATIONS, BenchmarkSparseSetLookupSetup);
+		reg.Register("Sparse Set Erase", "Erase", BenchmarkSparseSetErase, TEST_ITERATIONS, BenchmarkSparseSetEraseSetup);
+	}
+
+	void BenchmarkSparseSetEmplaceSetup()
+	{
+		g_TestSparseSet.clear();
+	}
+
+	void BenchmarkSparseSetEmplace()
+	{
+		for (uint32_t i{ 0 }; i < Mau::TEST_MAP_SIZE; ++i)
+		{
+			float const value{ Mau::GenerateValue(i) };
+			g_TestSparseSet.emplace(i, value);
+		}
+		ClobberMemory();
+	}
+
+	void BenchmarkSparseSetIterateSetup()
+	{
+		BenchmarkSparseSetEmplaceSetup();
+		BenchmarkSparseSetEmplace();
 	}
 
 	void BenchmarkSparseSetIterate()
 	{
 		float sum{ 0.0f };
 
-		for (auto& item : g_TestSparseSet)
+		for (auto const& item : g_TestSparseSet)
 		{
 			sum += item * 2.0f;
 			DoNotOptimize(sum);
@@ -27,14 +50,43 @@ namespace Mau
 		ClobberMemory();
 	}
 
-	void BenchmarkSparseSetEmplace()
+	void BenchmarkSparseSetLookupSetup()
 	{
-		g_TestSparseSet.clear();
+		BenchmarkSparseSetEmplaceSetup();
+		BenchmarkSparseSetEmplace();
+	}
 
-		for (uint32_t i{ 0 }; i < Mau::TEST_MAP_SIZE; ++i)
+	void BenchmarkSparseSetLookup()
+	{
+		float sum{ 0.0f };
+
+		for (auto const& e : g_LookupKeys)
 		{
-			float const value{ Mau::GenerateValue(i) };
-			g_TestSparseSet.emplace(i, value);
+			auto it{ g_TestSparseSet.find(e) };
+			if (it == g_TestSparseSet.end())
+			{
+				continue;
+			}
+
+			sum += *it * 2.0f;
 		}
+
+		DoNotOptimize(sum);
+		ClobberMemory();
+	}
+
+	void BenchmarkSparseSetEraseSetup()
+	{
+		BenchmarkSparseSetEmplaceSetup();
+		BenchmarkSparseSetEmplace();
+	}
+
+	void BenchmarkSparseSetErase()
+	{
+		for (auto const& e : g_LookupKeys)
+		{
+			g_TestSparseSet.remove(e);
+		}
+		ClobberMemory();
 	}
 }

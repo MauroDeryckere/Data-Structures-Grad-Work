@@ -5,8 +5,17 @@ namespace Mau
 {
 	void RegisterSparseSetBenchmarks();
 
-	void BenchmarkSparseSetIterate();
+	void BenchmarkSparseSetEmplaceSetup();
 	void BenchmarkSparseSetEmplace();
+
+	void BenchmarkSparseSetIterateSetup();
+	void BenchmarkSparseSetIterate();
+
+	void BenchmarkSparseSetLookupSetup();
+	void BenchmarkSparseSetLookup();
+
+	void BenchmarkSparseSetEraseSetup();
+	void BenchmarkSparseSetErase();
 }
 
 #endif

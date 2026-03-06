@@ -14,18 +14,18 @@ inline void ClobberMemory()
 }
 
 #elif defined(_MSC_VER)
-#include <intrin.h>
+#include <atomic>
 
 template <class T>
 inline void DoNotOptimize(const T& value)
 {
-	_ReadWriteBarrier();
-	(void)value;
+	volatile char const& c = reinterpret_cast<volatile char const&>(value);
+	(void)c;
 }
 
 inline void ClobberMemory()
 {
-	_ReadWriteBarrier();
+	std::atomic_signal_fence(std::memory_order_acq_rel);
 }
 #endif
 

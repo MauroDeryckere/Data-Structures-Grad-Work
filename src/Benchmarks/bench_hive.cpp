@@ -2,12 +2,11 @@
 #include "../benchmark.h"
 
 #include "plf_hive/plf_hive.h"
-
-// For hive we might need to add a map to do lookups likely not a good idea to benchmark hive for ECS.
+#include <unordered_map>
 
 namespace Mau
 {
-	struct HiveComponent 
+	struct HiveComponent
 	{
 		Entity entity;
 		ComponentSmall value;
@@ -16,24 +15,48 @@ namespace Mau
 	plf::hive<HiveComponent> g_TestHiveCombined;
 	plf::hive<ComponentSmall> g_TestHiveValueOnly;
 
+	// Side map for key-based lookup/erase on hive (which has no native key access)
+	std::unordered_map<Entity, plf::hive<HiveComponent>::iterator> g_HiveLookupMap;
 
 	void RegisterHiveBenchmarks()
 	{
-		auto& reg = Mau::BenchmarkRegistry::GetInstance();
+		auto& reg{ Mau::BenchmarkRegistry::GetInstance() };
 
-		// Combined
-		reg.Register("Hive Combined Emplace", "Hive Emplace", BenchmarkHiveCombinedEmplace, TEST_ITERATIONS);
-		reg.Register("Hive Combined Iterate", "Hive Iterate", BenchmarkHiveCombinedIterate, TEST_ITERATIONS);
+		reg.Register("Hive Combined Emplace", "Emplace", BenchmarkHiveCombinedEmplace, TEST_ITERATIONS, BenchmarkHiveCombinedEmplaceSetup);
+		reg.Register("Hive Combined Iterate", "Iterate", BenchmarkHiveCombinedIterate, TEST_ITERATIONS, BenchmarkHiveCombinedIterateSetup);
+		reg.Register("Hive Combined Lookup (side map)", "Lookup", BenchmarkHiveCombinedLookup, TEST_ITERATIONS, BenchmarkHiveCombinedLookupSetup);
+		reg.Register("Hive Combined Erase (side map)", "Erase", BenchmarkHiveCombinedErase, TEST_ITERATIONS, BenchmarkHiveCombinedEraseSetup);
 
-		// Value Only
-		reg.Register("Hive Value Only Emplace", "Hive Emplace", BenchmarkHiveValueOnlyEmplace, TEST_ITERATIONS);
-		reg.Register("Hive Value Only Iterate", "Hive Iterate", BenchmarkHiveValueOnlyIterate, TEST_ITERATIONS);
+		reg.Register("Hive Value Only Emplace", "Emplace", BenchmarkHiveValueOnlyEmplace, TEST_ITERATIONS, BenchmarkHiveValueOnlyEmplaceSetup);
+		reg.Register("Hive Value Only Iterate", "Iterate", BenchmarkHiveValueOnlyIterate, TEST_ITERATIONS, BenchmarkHiveValueOnlyIterateSetup);
+	}
+
+	// --- Combined ---
+
+	void BenchmarkHiveCombinedEmplaceSetup()
+	{
+		g_TestHiveCombined.clear();
+	}
+
+	void BenchmarkHiveCombinedEmplace()
+	{
+		for (uint32_t i{ 0 }; i < Mau::TEST_MAP_SIZE; ++i)
+		{
+			g_TestHiveCombined.emplace(i, Mau::GenerateValue(i));
+		}
+		ClobberMemory();
+	}
+
+	void BenchmarkHiveCombinedIterateSetup()
+	{
+		BenchmarkHiveCombinedEmplaceSetup();
+		BenchmarkHiveCombinedEmplace();
 	}
 
 	void BenchmarkHiveCombinedIterate()
 	{
 		float sum{ 0.0f };
-		for (auto& item : g_TestHiveCombined)
+		for (auto const& item : g_TestHiveCombined)
 		{
 			sum += item.value * 2.0f;
 			DoNotOptimize(sum);
@@ -41,33 +64,94 @@ namespace Mau
 		ClobberMemory();
 	}
 
-	void BenchmarkHiveCombinedEmplace()
+	static void FillHiveCombinedWithLookupMap()
 	{
 		g_TestHiveCombined.clear();
+		g_HiveLookupMap.clear();
+
 		for (uint32_t i{ 0 }; i < Mau::TEST_MAP_SIZE; ++i)
 		{
-			g_TestHiveCombined.emplace(i, Mau::GenerateValue(i));
+			auto it{ g_TestHiveCombined.emplace(i, Mau::GenerateValue(i)) };
+			g_HiveLookupMap.emplace(i, it);
 		}
+	}
+
+	void BenchmarkHiveCombinedLookupSetup()
+	{
+		FillHiveCombinedWithLookupMap();
+	}
+
+	void BenchmarkHiveCombinedLookup()
+	{
+		float sum{ 0.0f };
+
+		for (auto const& e : g_LookupKeys)
+		{
+			auto it{ g_HiveLookupMap.find(e) };
+			if (it == g_HiveLookupMap.end())
+			{
+				continue;
+			}
+
+			sum += it->second->value * 2.0f;
+		}
+
+		DoNotOptimize(sum);
+		ClobberMemory();
+	}
+
+	void BenchmarkHiveCombinedEraseSetup()
+	{
+		FillHiveCombinedWithLookupMap();
+	}
+
+	void BenchmarkHiveCombinedErase()
+	{
+		for (auto const& e : g_LookupKeys)
+		{
+			auto mapIt{ g_HiveLookupMap.find(e) };
+			if (mapIt == g_HiveLookupMap.end())
+			{
+				continue;
+			}
+
+			g_TestHiveCombined.erase(mapIt->second);
+			g_HiveLookupMap.erase(mapIt);
+		}
+		ClobberMemory();
+	}
+
+	// --- Value Only ---
+
+	void BenchmarkHiveValueOnlyEmplaceSetup()
+	{
+		g_TestHiveValueOnly.clear();
+	}
+
+	void BenchmarkHiveValueOnlyEmplace()
+	{
+		for (uint32_t i{ 0 }; i < Mau::TEST_MAP_SIZE; ++i)
+		{
+			g_TestHiveValueOnly.emplace(Mau::GenerateValue(i));
+		}
+		ClobberMemory();
+	}
+
+	void BenchmarkHiveValueOnlyIterateSetup()
+	{
+		BenchmarkHiveValueOnlyEmplaceSetup();
+		BenchmarkHiveValueOnlyEmplace();
 	}
 
 	void BenchmarkHiveValueOnlyIterate()
 	{
 		float sum{ 0.0f };
 
-		for (auto& value : g_TestHiveValueOnly)
+		for (auto const& value : g_TestHiveValueOnly)
 		{
 			sum += value * 2.0f;
 			DoNotOptimize(sum);
 		}
 		ClobberMemory();
-	}
-
-	void BenchmarkHiveValueOnlyEmplace()
-	{
-		g_TestHiveValueOnly.clear();
-		for (uint32_t i{ 0 }; i < Mau::TEST_MAP_SIZE; ++i)
-		{
-			g_TestHiveValueOnly.emplace(Mau::GenerateValue(i));
-		}
 	}
 }

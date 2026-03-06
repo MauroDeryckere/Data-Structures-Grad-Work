@@ -31,19 +31,22 @@ set(RESULTS_DIR "${RESULTS_DIR}" CACHE PATH "Benchmark results directory")
 
 add_executable(Project
     "src/main.cpp"
-    "src/benchmark.h" 
-    "src/singleton.h" 
+    "src/benchmark.h"
+    "src/benchmark.cpp"
+    "src/singleton.h"
     "src/benchmark_utils.h"
 
     "src/Benchmarks/bench_flat_map.h"
     "src/Benchmarks/bench_flat_map.cpp"
+    "src/Benchmarks/bench_std_flat_map.h"
+    "src/Benchmarks/bench_std_flat_map.cpp"
     "src/Benchmarks/bench_map.h"
     "src/Benchmarks/bench_map.cpp"
-    "src/Benchmarks/bench_unordered_map.h" 
+    "src/Benchmarks/bench_unordered_map.h"
     "src/Benchmarks/bench_unordered_map.cpp"
     "src/Benchmarks/bench_hive.h"
     "src/Benchmarks/bench_hive.cpp"
-    "src/Benchmarks/bench_sparse_set.h" 
+    "src/Benchmarks/bench_sparse_set.h"
     "src/Benchmarks/bench_sparse_set.cpp"
 )
 

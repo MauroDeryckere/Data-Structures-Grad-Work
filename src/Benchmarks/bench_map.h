@@ -5,8 +5,17 @@ namespace Mau
 {
 	void RegisterMapBenchmarks();
 
-	void BenchmarkMapIterate();
+	void BenchmarkMapEmplaceSetup();
 	void BenchmarkMapEmplace();
+
+	void BenchmarkMapIterateSetup();
+	void BenchmarkMapIterate();
+
+	void BenchmarkMapLookupSetup();
+	void BenchmarkMapLookup();
+
+	void BenchmarkMapEraseSetup();
+	void BenchmarkMapErase();
 }
 
 #endif
