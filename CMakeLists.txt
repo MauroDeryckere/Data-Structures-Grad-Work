@@ -10,7 +10,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Output directories
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-option(RESULTS_IN_SOURCE "Write results to the project root instead of build dir" OFF)
+option(RESULTS_IN_SOURCE "Write results to the project root instead of build dir" ON)
 
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
@@ -72,6 +72,14 @@ if (MSVC)
         /O2
         /DNDEBUG
         /GL- # Explicitly disable Whole Program Optimization
+        /GS- # Disable buffer security checks (stack cookies) for parity with GCC/Clang,
+             # which don't enable -fstack-protector by default on mingw-w64 targets
+        /arch:AVX2 # Without this, MSVC targets the x64 SSE2 baseline regardless of host
+                   # CPU; GCC/Clang's -march=native detect and use this machine's full
+                   # AVX2+FMA+BMI2+AES/VAES feature set (no AVX-512 on this CPU, so AVX2
+                   # is the correct target, not a compromise)
+        /std:c++latest # MSVC STL gates newer feature-test macros (e.g. flat_map, hive
+                        # once shipped) behind this even when CMAKE_CXX_STANDARD is 23
     )
     target_link_options(Project PRIVATE
         /LTCG:OFF
@@ -80,7 +88,6 @@ else()
     target_compile_options(Project PRIVATE
         -O3
         -march=native
-        -ffast-math
         -DNDEBUG
         -fno-lto
     )

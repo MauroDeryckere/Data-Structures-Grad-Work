@@ -30,8 +30,8 @@ namespace Mau
 		float data[64]{};
 	};
 
-	uint32_t constexpr TEST_MAP_SIZE{ 1'000'000 };
-	uint32_t constexpr TEST_ITERATIONS{ 30 };
+	uint32_t constexpr TEST_MAP_SIZE{ 10'000 };   // TEMP: shrunk for pipeline smoke test, revert before real runs
+	uint32_t constexpr TEST_ITERATIONS{ 5 };      // TEMP: shrunk for pipeline smoke test, revert before real runs
 
 	uint32_t constexpr NUM_WARMUP_RUNS{ 5 };
 
@@ -69,9 +69,9 @@ namespace Mau
 
 		[[nodiscard]] std::vector<BenchmarkResult> RunAll(std::optional<std::vector<std::string>> categoryFilter = std::nullopt) const noexcept;
 
-		static bool WriteCsv(std::filesystem::path const& filePath, std::string const& compilerInfo, std::vector<BenchmarkResult> const& results) noexcept;
+		static bool WriteCsv(std::filesystem::path const& filePath, std::string const& compilerInfo, std::string const& stdLibInfo, std::vector<BenchmarkResult> const& results) noexcept;
 
-		static bool AppendToMasterResults(std::filesystem::path const& mergedFile, std::string const& compilerInfo, std::vector<BenchmarkResult> const& results) noexcept;
+		static bool AppendToMasterResults(std::filesystem::path const& mergedFile, std::string const& compilerInfo, std::string const& stdLibInfo, std::vector<BenchmarkResult> const& results) noexcept;
 
 	private:
 		friend class Singleton<BenchmarkRegistry>;

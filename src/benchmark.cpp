@@ -11,6 +11,7 @@
 #include <sstream>
 #include <iomanip>
 #include <ctime>
+#include <unordered_set>
 
 namespace Mau
 {
@@ -139,7 +140,7 @@ namespace Mau
 		return { entry.name, entry.category, used, avg, total, median, min, max, stdDev };
 	}
 
-	bool BenchmarkRegistry::WriteCsv(std::filesystem::path const& filePath, std::string const& compilerInfo, std::vector<BenchmarkResult> const& results) noexcept
+	bool BenchmarkRegistry::WriteCsv(std::filesystem::path const& filePath, std::string const& compilerInfo, std::string const& stdLibInfo, std::vector<BenchmarkResult> const& results) noexcept
 	{
 		std::ofstream out(filePath);
 		if (!out.is_open())
@@ -150,11 +151,12 @@ namespace Mau
 
 		out.imbue(std::locale::classic());
 		out << std::fixed << std::setprecision(6);
-		out << "Compiler,Benchmark,Category,Iterations,Average(Ms),Total(Ms),Median(Ms),Min(Ms),Max(Ms),StdDev(Ms)\n";
+		out << "Compiler,StdLib,Benchmark,Category,Iterations,Average(Ms),Total(Ms),Median(Ms),Min(Ms),Max(Ms),StdDev(Ms)\n";
 
 		for (auto const& r : results)
 		{
 			out << compilerInfo << ','
+				<< stdLibInfo << ','
 				<< r.name << ','
 				<< r.category << ','
 				<< r.iterations << ','
@@ -170,44 +172,8 @@ namespace Mau
 		return true;
 	}
 
-	bool BenchmarkRegistry::AppendToMasterResults(std::filesystem::path const& mergedFile, std::string const& compilerInfo, std::vector<BenchmarkResult> const& results) noexcept
+	bool BenchmarkRegistry::AppendToMasterResults(std::filesystem::path const& mergedFile, std::string const& compilerInfo, std::string const& stdLibInfo, std::vector<BenchmarkResult> const& results) noexcept
 	{
-		std::vector<std::string> oldLines;
-		if (std::filesystem::exists(mergedFile))
-		{
-			std::ifstream in(mergedFile);
-			std::string line;
-			int skip{ 0 };
-			while (std::getline(in, line))
-			{
-				if (skip != 2)
-				{
-					++skip;
-					continue;
-				}
-
-				oldLines.emplace_back(line);
-			}
-		}
-
-		for (auto const& r : results)
-		{
-			std::ostringstream oss;
-			oss << std::fixed << std::setprecision(6);
-			oss << compilerInfo << ','
-				<< r.name << ','
-				<< r.category << ','
-				<< r.iterations << ','
-				<< r.avgMs << ','
-				<< r.totalMs << ','
-				<< r.medianMs << ','
-				<< r.minMs << ','
-				<< r.maxMs << ','
-				<< r.stdDevMs;
-
-			oldLines.emplace_back(oss.str());
-		}
-
 		auto getField
 		{
 			[](std::string const& line, size_t index) -> std::string
@@ -223,16 +189,74 @@ namespace Mau
 			}
 		};
 
+		auto makeKey
+		{
+			[](std::string const& compiler, std::string const& stdLib, std::string const& name, std::string const& category) -> std::string
+			{
+				return compiler + '\x1f' + stdLib + '\x1f' + name + '\x1f' + category;
+			}
+		};
+
+		// Rows this run is about to (re)write, keyed by (Compiler, StdLib, Benchmark,
+		// Category), so a stale row sharing that key gets replaced instead of duplicated
+		// (e.g. re-running just one toolchain via -Only updates only its own rows).
+		std::unordered_set<std::string> newKeys;
+		for (auto const& r : results)
+		{
+			newKeys.insert(makeKey(compilerInfo, stdLibInfo, r.name, r.category));
+		}
+
+		std::vector<std::string> oldLines;
+		if (std::filesystem::exists(mergedFile))
+		{
+			std::ifstream in(mergedFile);
+			std::string line;
+			int skip{ 0 };
+			while (std::getline(in, line))
+			{
+				if (skip != 2)
+				{
+					++skip;
+					continue;
+				}
+
+				std::string const key{ makeKey(getField(line, 0), getField(line, 1), getField(line, 2), getField(line, 3)) };
+				if (!newKeys.contains(key))
+				{
+					oldLines.emplace_back(line);
+				}
+			}
+		}
+
+		for (auto const& r : results)
+		{
+			std::ostringstream oss;
+			oss << std::fixed << std::setprecision(6);
+			oss << compilerInfo << ','
+				<< stdLibInfo << ','
+				<< r.name << ','
+				<< r.category << ','
+				<< r.iterations << ','
+				<< r.avgMs << ','
+				<< r.totalMs << ','
+				<< r.medianMs << ','
+				<< r.minMs << ','
+				<< r.maxMs << ','
+				<< r.stdDevMs;
+
+			oldLines.emplace_back(oss.str());
+		}
+
 		std::sort(oldLines.begin(), oldLines.end(),
 			[getField](std::string const& a, std::string const& b)
 			{
-				std::string const aCategory{ getField(a, 2) };
-				std::string const bCategory{ getField(b, 2) };
+				std::string const aCategory{ getField(a, 3) };
+				std::string const bCategory{ getField(b, 3) };
 
 				if (aCategory == bCategory)
 				{
-					std::string const aName{ getField(a, 1) };
-					std::string const bName{ getField(b, 1) };
+					std::string const aName{ getField(a, 2) };
+					std::string const bName{ getField(b, 2) };
 					return aName < bName;
 				}
 
@@ -263,7 +287,7 @@ namespace Mau
 
 		merged << "Date:," << timeBuf << "\n";
 
-		merged << "Compiler,Benchmark,Category,Iterations,Average(Ms),Total(Ms),Median(Ms),Min(Ms),Max(Ms),StdDev(Ms)\n";
+		merged << "Compiler,StdLib,Benchmark,Category,Iterations,Average(Ms),Total(Ms),Median(Ms),Min(Ms),Max(Ms),StdDev(Ms)\n";
 		for (auto const& line : oldLines)
 		{
 			merged << line << "\n";

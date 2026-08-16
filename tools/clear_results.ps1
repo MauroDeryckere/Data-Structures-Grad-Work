@@ -1,22 +1,30 @@
+<#
+.SYNOPSIS
+    Clears benchmark results. Defaults to the repo-local ./results directory,
+    matching CMakeLists.txt's default (RESULTS_IN_SOURCE=ON).
+
+.PARAMETER ResultsDir
+    Override if you built with -DRESULTS_IN_SOURCE=OFF (out-of-tree results dir).
+#>
+param(
+    [string] $ResultsDir = ""
+)
+
 Write-Host "=== Clearing benchmark results ==="
 
-$buildDir = Join-Path $PSScriptRoot "build/msvc"
-$cache    = Join-Path $buildDir "CMakeCache.txt"
-
-if (!(Test-Path $cache)) {
-    Write-Warning "CMakeCache.txt not found. Build first."
-    exit 1
+if ($ResultsDir -eq "")
+{
+    $src = (Resolve-Path "$PSScriptRoot/..").ToString()
+    $ResultsDir = Join-Path $src "results"
 }
 
-$resultsDir = Select-String $cache -Pattern "^RESULTS_DIR:PATH=" |
-    ForEach-Object { $_.Line.Split("=")[1] }
-
-if (!$resultsDir -or !(Test-Path $resultsDir)) {
-    Write-Warning "Results directory not found."
-    exit 1
+if (!(Test-Path $ResultsDir))
+{
+    Write-Host "Nothing to clear - $ResultsDir does not exist."
+    exit 0
 }
 
-Get-ChildItem -Path $resultsDir -Recurse -Force |
+Get-ChildItem -Path $ResultsDir -Recurse -Force |
     Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
 
-Write-Host "Cleared results in $resultsDir"
+Write-Host "Cleared results in $ResultsDir"

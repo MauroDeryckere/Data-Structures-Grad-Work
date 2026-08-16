@@ -1,5 +1,7 @@
 tools/compilers
 tools/Build
+tools/build
+/results/
 
 # Build artifacts
 /build/

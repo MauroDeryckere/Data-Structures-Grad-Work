@@ -53,6 +53,19 @@ namespace Mau
 	{
 		return static_cast<float>((i * 37) % 1000) / 1000.0f;
 	}
+
+	[[nodiscard]] static std::string GetStdLibInfo() noexcept
+	{
+		#if defined(_LIBCPP_VERSION)
+			return "libc++ " + std::to_string(_LIBCPP_VERSION);
+		#elif defined(_MSVC_STL_VERSION)
+			return "MSVC STL " + std::to_string(_MSVC_STL_VERSION);
+		#elif defined(_GLIBCXX_RELEASE)
+			return "libstdc++ " + std::to_string(_GLIBCXX_RELEASE);
+		#else
+			return "Unknown stdlib";
+		#endif
+	}
 }
 
 #endif

@@ -17,7 +17,8 @@
 int main(int argc, char* argv[])
 {
 	std::string const compilerInfo{ Mau::GetCompilerInfo() };
-	std::cout << "Running benchmarks for: " << compilerInfo << "\n";
+	std::string const stdLibInfo{ Mau::GetStdLibInfo() };
+	std::cout << "Running benchmarks for: " << compilerInfo << " / " << stdLibInfo << "\n";
 
 	// Optional category filter from command line args
 	std::optional<std::vector<std::string>> categoryFilter;
@@ -37,8 +38,9 @@ int main(int argc, char* argv[])
 		std::cout << "\n";
 	}
 
-	// Sanitize compiler info for file name
-	std::string safeName{ compilerInfo };
+	// Sanitize compiler+stdlib info for file name (both are needed to keep e.g.
+	// Clang/MSVC-STL and Clang/libc++ runs from overwriting each other's CSV)
+	std::string safeName{ compilerInfo + "_" + stdLibInfo };
 	for (char& c : safeName)
 	{
 		if (c == ' ' || c == '(' || c == ')' || c == ':') c = '_';
@@ -62,11 +64,11 @@ int main(int argc, char* argv[])
 	auto const results{ benchmarkReg.RunAll(categoryFilter) };
 #pragma endregion
 
-	benchmarkReg.WriteCsv(filePath, compilerInfo, results);
+	benchmarkReg.WriteCsv(filePath, compilerInfo, stdLibInfo, results);
 
 	std::filesystem::path const mergedFile{ resultsDir / "all_results.csv" };
 
-	benchmarkReg.AppendToMasterResults(mergedFile, compilerInfo, results);
+	benchmarkReg.AppendToMasterResults(mergedFile, compilerInfo, stdLibInfo, results);
 
 	return 0;
 }
