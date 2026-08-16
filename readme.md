@@ -382,6 +382,142 @@ isolated micro-benchmark (bare `std::vector<std::pair<uint32_t,float>>::erase` a
 three libraries, stripped of the flat_map/ECS wrapper) in the next phase, to confirm the
 mechanism definitively and reconfirm at full (1,000,000-element) scale.
 
+## RQ1: Functional viability: ECS component storage wrappers
+
+Per H1's methodology ("identical ECS wrapper APIs backed by std::flat_map, std::hive,
+sparse set, and other map-based data structures" + a "deterministic functional test suite"
+exercising create/destroy/add/remove/lookup/iteration), built `src/ComponentStorage/` (a
+shared `ComponentStorage` concept plus six wrapper classes: `SparseSetStorage`,
+`FlatMapStorage`, `StdFlatMapStorage`, `HiveStorage`, `MapStorage`, `UnorderedMapStorage`)
+and `tests/` (a `doctest`-based functional suite, vendored at `libs/doctest/doctest.h`). All
+of the below is verified passing (12 test cases, 222 assertions, zero failures) on all
+three standard library implementations (MSVC STL, libstdc++/GCC 15.2.0, libc++/MSYS2
+`CLANG64`), not just one.
+
+### The two-tier `Add()` / `AddNew()` design
+
+Every wrapper exposes both:
+- **`Add(e, v)`**: safe, get-or-insert. Defined behavior on a duplicate key (returns the
+  existing element unchanged), the same contract on all six backends.
+- **`AddNew(e, v)`**: fast, unchecked. Precondition: `e` is not already present. Matches
+  this project's existing `Emplace` benchmarks, which always insert into a freshly-cleared
+  container with guaranteed-unique keys and never needed the safety `Add()` provides.
+
+**Important clarification, since it's easy to misread this as "sparse_set doesn't handle
+duplicates":** it does, natively. `sparse_set` already ships `get_or_emplace()` and
+`try_emplace()` as normal, first-class methods (`libs/SparseSet/SparseSet.h`), and `Add()`
+just calls `get_or_emplace()` directly. That's exactly as legitimate and "automatic" as
+`std::map::emplace()` handling duplicates. The real distinction `AddNew()` is built around is
+narrower: **which backends have a *second*, genuinely cheaper unchecked primitive to route
+to**, separate from their safe one:
+
+- **`sparse_set`**: yes. Its raw `emplace()` has a documented precondition ("do not emplace
+  the same element twice") and, in the currently-vendored copy, that precondition is enforced
+  by nothing at all at runtime: `libs/SparseSet/InternalAssert.h` hardcodes `#define
+  NOASSERTS` unconditionally, which makes the `ASSERT` macro expand to `((void)0)`, a macro
+  body that never references its `condition` parameter, so `contains(element)` isn't just
+  skipped, it's **never evaluated in the first place**. `AddNew()` routes to this raw
+  `emplace()`, giving it a real, measurable saving over `Add()`'s `get_or_emplace()` check.
+- **`std::map` / `std::unordered_map` / SG14 `flat_map` / `std::flat_map`**: no. For an
+  ordered or hashed structure, *locating where to insert* and *checking whether the key
+  already exists* are the same operation, so there's no cheaper "trust me" variant to fall
+  back to. `AddNew()` is a plain alias for `Add()` on all four: same code, same cost, kept
+  only so generic code can call `AddNew()` uniformly everywhere without special-casing these
+  four out.
+- **`plf::hive`**: a third, different situation. Hive itself has no concept of "duplicate"
+  at all (it's a bag, not a set, so inserting the same value twice is always fine at the
+  container level). The checked/unchecked distinction for `HiveStorage` exists entirely
+  inside the *wrapper's own* side-index bookkeeping, not inherent to hive: `Add()` checks
+  the side-index before inserting, `AddNew()` skips that check.
+
+### `HiveStorage`: what changed, and why
+
+First draft stored `plf::hive<std::pair<Entity, Val>>` plus a
+`std::unordered_map<Entity, iterator>` side-map (mirroring what `bench_hive.cpp` already did
+ad hoc). Two problems, fixed independently:
+
+1. **Redundant entity storage.** `Values()` (the uniform iteration surface every wrapper
+   exposes) only ever yields `Val&`, never the entity. Storing `pair<Entity, Val>` meant
+   every live component's entity ID was held in memory *twice*: once inside the hive's pair,
+   once again as the side-map's key, for zero benefit. Fixed by storing bare `plf::hive<Val>`;
+   the entity ID now lives in exactly one place.
+2. **Side-index data structure choice.** Switched from `std::unordered_map` to a dense
+   `std::vector` indexed directly by entity, mirroring `sparse_set`'s own `m_SparseArr`
+   design. This is the right default *for this project*: every benchmark here uses small,
+   dense, sequential entity ID ranges (`0..N`), exactly the case a direct-indexed array is
+   built for: true O(1) worst-case lookup, no hashing, no bucket/node overhead, better cache
+   locality. It's the *wrong* choice for a sparse entity ID space (a handful of live entities
+   scattered across a huge ID range), where an array sized to the highest entity ID seen would
+   waste memory a hash map wouldn't. Flagged in-code (`src/ComponentStorage/hive_storage.h`)
+   as worth a separate sparse/hash-map variant once the methodology's sparse-iteration ECS
+   workload benchmarks exist (called for in the assignment's "ECS Workload Benchmarks"
+   section, not yet built).
+3. **Raw pointer instead of a stored iterator.** The array holds `Val*`, not
+   `plf::hive<Val>::iterator`. Checked `plf::hive`'s actual iterator definition
+   (`libs/plf_hive/plf_hive.h`): it holds three pointers internally (`group_pointer`,
+   `element_pointer`, `skipfield_pointer`), 24 bytes on a 64-bit build, versus 8 for a plain
+   pointer. Hive exposes `get_iterator(pointer) noexcept` specifically to reconstruct a full
+   iterator from a raw element pointer on demand, so the side-index only pays the full
+   iterator's size at the one call site that actually needs it (`Remove`), not for every
+   stored entity, a 3x smaller side-index for free.
+
+**This is itself an RQ4.2-relevant finding, not just an implementation detail.** Hive's total
+lack of native key-based access means the exact "dense-array vs. hash-map" tradeoff this
+whole paper studies for component storage generally gets pushed down into the integration
+layer as a decision the ECS author is forced to make just to give hive a usable key-based API
+at all, surfaced by actually building the wrapper, not assumed from documentation.
+
+### `Reserve(n)`: a capacity hint, and a correction the compiler caught
+
+Added `Reserve(n)` to the concept and all six wrappers, which pre-sizes the backend for `n`
+elements. Matters disproportionately for hive: it allocates in fixed-capacity blocks rather
+than one contiguous buffer, so without reserving, bulk inserts cause block-by-block growth.
+This is directly the subject of the assignment's own methodology, which calls out
+*"std::hive allocation pattern experiments"* under H2.
+
+Each wrapper routes to whatever's actually native rather than pretending they're all the same:
+- **`sparse_set`, `std::unordered_map`, `plf::hive`**: a real `reserve()`.
+- **`std::map`**: a genuine no-op: confirmed against documentation that `std::map` is
+  node-based and the standard defines no capacity concept for it at all.
+- **SG14 `flat_map` *and* `std::flat_map`**: neither has `reserve()`. First pass wrongly
+  assumed `std::flat_map::reserve()` existed by analogy to `std::vector`; MSVC's compiler
+  caught it immediately with a real "`'reserve': is not a member of`" error, then confirmed
+  against cppreference that this is conformant standard behavior, not an MSVC gap. Both
+  instead use the identical P0429 `extract()`/`replace()` pair: `extract()` moves the
+  underlying `keys`/`values` containers out (clearing the map), `.reserve(n)` is called on
+  each directly, then `replace()` moves them back in. This is the library's own sanctioned
+  way to bulk-manipulate the underlying storage, used here rather than patching either
+  vendored header.
+
+Tested in `tests/test_reserve.cpp` across all six backends: reserving on an empty storage,
+reserving then bulk-inserting exactly `n` fresh entities, a `Reserve(0)` edge case, and
+reserving mid-use after entities are already present (the case most likely to actually catch
+a bug). That last one specifically exercises the `extract()`/`replace()` round-trip's ability
+to preserve existing data rather than silently lose it. Two further tests confirm `Reserve()`
+doesn't quietly break the reference-stability guarantee for the backends that promise it
+(`plf::hive`; `std::unordered_map`, whose `reserve()` can force a rehash, standard-guaranteed
+to invalidate iterators but not references/pointers).
+
+### Reference/iterator stability matrix
+
+Direct empirical grounding for H1.1/H1.2's specific claims, not just prose: each backend's
+*expected* outcome is asserted as a real, failing-if-wrong test
+(`tests/test_reference_stability.cpp`): add several entities, take a `Val*` via `Find()`,
+perform unrelated churn elsewhere in the storage (remove several live entities, then add
+enough new ones to force reallocation/rehashing on any backend that would do so), then check
+whether the original pointer's *address* is unchanged (compared as addresses only, never
+dereferenced post-churn, so the test itself never risks UB on the backends expected to
+invalidate it).
+
+| Backend | Result | Why |
+|---|---|---|
+| `sparse_set` | unstable | contiguous storage; erase-elsewhere does swap-and-pop, relocating the back element |
+| SG14 `flat_map` | unstable | sorted `std::vector`; insert/erase shifts or reallocates |
+| `std::flat_map` | unstable | same as above |
+| `std::map` | stable | node-based; erasing a different node never touches other nodes |
+| `std::unordered_map` | stable | references/pointers survive rehashing by standard guarantee; only iterators don't |
+| `plf::hive` | stable | the container's entire reason for existing in this comparison |
+
 ## Sources
 
 - P0429R9, *A Standard `flat_map`* — https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2023/p0429r9.pdf

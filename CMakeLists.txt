@@ -112,3 +112,28 @@ if (MINGW)
         -static-libstdc++
     )
 endif()
+
+# ===============================
+# Functional test suite (RQ1) - correctness, not performance, so none of the
+# Project target's timing-parity flags (LTO/GS/arch/fast-math/...) apply here.
+# ===============================
+add_executable(Tests
+    "tests/main.cpp"
+    "tests/test_component_storage.cpp"
+    "tests/test_reference_stability.cpp"
+    "tests/test_reserve.cpp"
+
+    "src/ComponentStorage/component_storage.h"
+    "src/ComponentStorage/sparse_set_storage.h"
+    "src/ComponentStorage/flat_map_storage.h"
+    "src/ComponentStorage/std_flat_map_storage.h"
+    "src/ComponentStorage/hive_storage.h"
+    "src/ComponentStorage/map_storage.h"
+    "src/ComponentStorage/unordered_map_storage.h"
+)
+
+target_link_libraries(Tests PRIVATE Libs)
+target_compile_features(Tests PRIVATE cxx_std_23)
+
+enable_testing()
+add_test(NAME FunctionalTests COMMAND Tests)
